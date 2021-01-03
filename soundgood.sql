@@ -1,5 +1,5 @@
-CREATE DATABASE soundgood;
-\c soundgood
+CREATE DATABASE simplejdbc;
+\c simplejdbc
 
 CREATE TABLE person( -- strong entity
   id serial NOT NULL,
@@ -56,6 +56,7 @@ CREATE TABLE instructor(
 
 CREATE TABLE rented_instrument(
   id serial NOT NULL,
+  lease_start DATE NOT NULL,
   lease_end DATE NOT NULL,
   student_id INT NOT NULL,
   instrument_stock_id INT NOT NULL,
@@ -120,8 +121,8 @@ CREATE TABLE instructor_instrument(
 
 CREATE TABLE available_schedule(
   instructor_id INT NOT NULL,
-  time_start TIMESTAMP(6),
-  time_end TIMESTAMP(6),
+  time_start TIMESTAMP(6) NOT NULL,
+  time_end TIMESTAMP(6) NOT NULL,
   PRIMARY KEY(instructor_id, time_start, time_end),
   FOREIGN KEY(instructor_id) REFERENCES instructor(id) ON DELETE CASCADE
 );
