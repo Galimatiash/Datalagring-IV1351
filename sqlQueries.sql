@@ -1,3 +1,27 @@
+----- exempel på hur kort kod hade varit om man endast räknade med "rental per month => start date = month"
+
+-- total number of instruments per month
+SELECT date_part('month', rei.lease_start) AS month, 'all instruments' as instruments, COUNT (*) as count
+FROM rented_instrument as rei
+WHERE date_part('year', rei.lease_start) = '2020'
+GROUP BY  date_part('month', rei.lease_start)
+UNION ALL
+
+-- total number of instruments
+SELECT 0 as month, 'all instruments' as instruments, COUNT(*)
+FROM rented_instrument as rei
+WHERE date_part('year', rei.lease_start) = '2020'
+UNION ALL
+
+-- rented instruments of each kind per month
+SELECT date_part('month', r.lease_start) as month, s.instrument as instruments, COUNT (s.instrument)
+FROM rented_instrument as r INNER JOIN instrument_stock as s
+ON r.instrument_stock_id = s.id
+WHERE
+date_part('year', r.lease_start) = '2020'
+GROUP BY(s.instrument, r.lease_start)
+ORDER BY count DESC
+
 ------------------------------------------------------- Show the numbers of instruments .... ------------------------------------------------------------------------------------------------
 ------- Task 3, bullet 1
 
@@ -6,7 +30,7 @@ SELECT 'January' as month, 'every instrument' as instrument, COUNT (*) from rent
 ((lease_start <= '2020-01-01' AND lease_end >= '2020-02-01') OR -- begin before, end after
 (lease_start <= '2020-01-01' AND (lease_end BETWEEN '2020-01-01' and '2020-02-01')) OR -- begin before, end during
 ((lease_start BETWEEN '2020-01-01' and '2020-02-01') AND lease_end >= '2020-02-01')) OR -- begin during, end after
-((lease_start BETWEEN '2020-01-01' and '2020-02-01') AND (lease_end BETWEEN '2020-01-01' and '2020-02-01')) -- begin during, end during (termination case)
+((lease_start BETWEEN '2020-01-01' and '2020-02-01') AND (lease_end BETWEEN '2020-01-01' and '2020-02-01'))
 UNION ALL
 SELECT 'February' as month, 'every instrument' as instrument, COUNT (*) from rented_instrument where
 ((lease_start <= '2020-02-01' AND lease_end >= '2020-03-01') OR
@@ -187,10 +211,9 @@ WHERE ((lease_start <= '2020-12-01' AND lease_end >= '2021-01-01') OR
 GROUP BY(s.instrument) ORDER BY count DESC
 ) as y
 
------------------------------------------------------------ The same as above, but retrieve the average number of rentals ... --------------------------------------------------------------------------------------------
+--------------------------------------- The same as above, but retrieve the average number of rentals ... --------------------------------------------------------------------------------------------
 ----Task 3, bullet 2
 
-SELECT * FROM(
 SELECT 'every instrument' as instrument, AVG(count) as average FROM(
 SELECT COUNT (*) from rented_instrument where
 ((lease_start <= '2020-01-01' AND lease_end >= '2020-02-01') OR
@@ -264,7 +287,6 @@ SELECT COUNT (*) from rented_instrument where
 ((lease_start BETWEEN '2020-12-01' and '2021-01-01') AND lease_end >= '2021-01-01')) OR
 ((lease_start BETWEEN '2020-12-01' and '2021-01-01') AND (lease_end BETWEEN '2020-12-01' and '2021-01-01'))
 ) as k
-) as y
 UNION ALL
 
 
@@ -380,7 +402,7 @@ GROUP BY s.instrument
 ) as k
 GROUP BY k.instrument
 
-------------------------------------------------------- Show the number of lessons given per month during a specified year... ------------------------------------------------------------------------------------------------
+-------------------------------------- Show the number of lessons given per month during a specified year... ------------------------------------------------------------------------------------------------
 --- Task 3, bullet 3
 
 SELECT k.month, k.lesson, SUM(count) FROM (
@@ -955,7 +977,7 @@ FROM instructor as i INNER JOIN common_lesson as c
 ON i.id = c.instructor_id
 WHERE(DATE_PART('month', c.time_start) = DATE_PART('month', CURRENT_DATE))
 AND (DATE_PART('year', c.time_start) = DATE_PART('year', CURRENT_DATE))
-AND(l.time_start <= CURRENT_DATE)
+AND(c.time_start <= CURRENT_DATE)
 GROUP BY i.id
 ) as i
 GROUP BY i.id
@@ -995,12 +1017,14 @@ WHERE (sum > 0) -- modify to change lower limit for showing up in table
 
 -- no rows?
 
-SELECT k.id as id, k.time, k.type as genre, weekday as weekday,
+SELECT id, time, weekday, genre
 CASE
-WHEN k.attendees > 0 AND k.attendees <= 2 THEN k.max_attendees - k.attendees
-WHEN k.attendees = 0 THEN k.max_attendees - k.attendees
-WHEN k.attendees > 0 THEN k.max_attendees - k.attendees
+WHEN y.seats > 0 AND y.seats <= 2 THEN '1-2'
+WHEN y.seats = 0 THEN '0'
+WHEN y.seats > 0 THEN 'many'
 END seats
+FROM(
+SELECT k.id as id, k.time, k.type as genre, weekday as weekday, k.max_attendees - k.attendees as seats
 FROM(
 
 SELECT cl.id as id, extract(isodow from cl.time_start) as weekday, cl.max_attendees as max_attendees,
@@ -1014,13 +1038,14 @@ WHERE type.is_ensamble = '1' AND
 cl.time_start >= cast(current_date + make_interval(days => cast(7-extract(isodow from current_date) as int) + 1) as DATE) AND
 cl.time_start <= cast(current_date + make_interval(days => cast(7-extract(isodow from current_date) as int) + 7) as DATE)
 GROUP BY (cl.id, type.type)
-ORDER BY(extract(isodow from cl.time_start), type.type)
 ) as k
+)as y
+ORDER BY(weekday, genre)
 
 ------------------------------------------------------- List the three instruments with the lowest monthly rental fee... -------------------------------------------------
 --- Task 3, bullet 7
 
-SELECT instrument, price, available, rented, MIN(upcoming)
+SELECT instrument, price, available - rented as available, MIN(upcoming)
 FROM(
 
 SELECT ins.instrument, ins.rental_fee as price, ins.available_amount as available,
