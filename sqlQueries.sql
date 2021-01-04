@@ -25,6 +25,7 @@ ORDER BY count DESC
 ------------------------------------------------------- Show the numbers of instruments .... ------------------------------------------------------------------------------------------------
 ------- Task 3, bullet 1
 
+CREATE VIEW instrument_per_month AS
 SELECT * FROM(
 SELECT 'January' as month, 'every instrument' as instrument, COUNT (*) from rented_instrument where
 ((lease_start <= '2020-01-01' AND lease_end >= '2020-02-01') OR -- begin before, end after
@@ -213,6 +214,12 @@ GROUP BY(s.instrument) ORDER BY count DESC
 
 --------------------------------------- The same as above, but retrieve the average number of rentals ... --------------------------------------------------------------------------------------------
 ----Task 3, bullet 2
+
+--- Same as below, but using a view "instrument_per_month"
+SELECT instrument, SUM(count)/12 as average
+FROM instrument_per_month
+GROUP BY instrument
+---
 
 SELECT 'every instrument' as instrument, AVG(count) as average FROM(
 SELECT COUNT (*) from rented_instrument where
@@ -1017,7 +1024,8 @@ WHERE (sum > 0) -- modify to change lower limit for showing up in table
 
 -- no rows?
 
-SELECT id, time, weekday, genre
+
+SELECT id, time, weekday, genre,
 CASE
 WHEN y.seats > 0 AND y.seats <= 2 THEN '1-2'
 WHEN y.seats = 0 THEN '0'
@@ -1045,7 +1053,7 @@ ORDER BY(weekday, genre)
 ------------------------------------------------------- List the three instruments with the lowest monthly rental fee... -------------------------------------------------
 --- Task 3, bullet 7
 
-SELECT instrument, price, available - rented as available, MIN(upcoming)
+SELECT instrument, price, available, MIN(upcoming)
 FROM(
 
 SELECT ins.instrument, ins.rental_fee as price, ins.available_amount as available,
