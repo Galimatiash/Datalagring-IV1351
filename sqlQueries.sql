@@ -1041,9 +1041,6 @@ WHERE (sum > 0) -- modify to change lower limit for showing up in table
 -------------------------------------------------- List all ensembles held during next week, sorted by music... -----------------------------------------------------------
 --- Task 3, bullet 6
 
--- no rows?
-
-
 SELECT id, time, weekday, genre,
 CASE
 WHEN y.seats > 0 AND y.seats <= 2 THEN '1-2'
